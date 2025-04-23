@@ -2,6 +2,7 @@ package org.example.sample5;           // Feb 2025
 
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -17,10 +18,10 @@ import static java.time.temporal.ChronoUnit.SECONDS;
  * - get the JSON string (the response body from the response)
  * - convert the JSON string into a Java object using the org.json Parser
  * - check the return status code from the Http response
- *
+ * <p>
  * This sample uses the following API:
  * API Request:   http://api.open-notify.org/iss-now.json
- *
+ * <p>
  * Response from API request: (as at March 2024)
  * {
  * "iss_position": {
@@ -41,66 +42,54 @@ public class Main {
         // Ref:  https://www.baeldung.com/java-9-http-client
 
         System.out.println("Making request to ISS API - please wait as response may take some time.....");
+
+
         try (HttpClient client = HttpClient.newHttpClient()) {
+
             HttpRequest request = HttpRequest.newBuilder()  // build an HTTP request
                     .uri(URI.create(URL))
-                    .timeout(Duration.of(10, SECONDS))
+                    .timeout(Duration.of(20, SECONDS))
                     .GET()
                     .build();
 
-            try {
-                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-                // Check the response code returned from the API endpoint
-                // A code of 200 indicates success
-                if (response.statusCode() == 200) {
 
-                    // get the body (the data payload) from the HTTP response object
-                    String jsonResponseString = response.body();
+            // Check the response code returned from the API endpoint
+            // A code of 200 indicates success
+            if (response.statusCode() == 200) {
 
-                    if (jsonResponseString != null) {
+                // get the body (the data payload) from the HTTP response object
+                String jsonResponseString = response.body();
 
-                        System.out.println(jsonResponseString);
+                if (jsonResponseString != null) {
 
-                        // convert JSON String into a JSONObject (root object)
-                        JSONObject jsonObjectRoot = new JSONObject(jsonResponseString);
+                    System.out.println(jsonResponseString);
 
-                        long timestamp = jsonObjectRoot.getLong("timestamp");
-                        String message = jsonObjectRoot.getString("message");
+                    // convert JSON String into a JSONObject (root object)
+                    JSONObject jsonObjectRoot = new JSONObject(jsonResponseString);
 
-                        // get iss_position object into JSONObject
-                        JSONObject jsonObjectPosition = jsonObjectRoot.getJSONObject("iss_position");
-                        String longitude = jsonObjectPosition.getString("longitude");
-                        String latitude = jsonObjectPosition.getString("latitude");
+                    long timestamp = jsonObjectRoot.getLong("timestamp");
+                    String message = jsonObjectRoot.getString("message");
 
-                        System.out.println("ISS Position data: " + longitude + ", " + latitude + ", " + timestamp + ", " + message);
-                    }
-                    else {
-                        System.out.println("Json String was empty.");
-                    }
+                    // get iss_position object into JSONObject
+                    JSONObject jsonObjectPosition = jsonObjectRoot.getJSONObject("iss_position");
+                    String longitude = jsonObjectPosition.getString("longitude");
+                    String latitude = jsonObjectPosition.getString("latitude");
+
+                    System.out.println("ISS Position data : " + longitude + ", " + latitude + ", " + timestamp + ", " + message);
                 } else {
-                    System.out.println("HTTP Request failed - Status code returned = " + response.statusCode());
+                    System.out.println("Json String was empty.");
                 }
-
-            } catch (Exception e) {
-                e.printStackTrace();
+            } else {
+                System.out.println("HTTP Request failed - Status code returned = " + response.statusCode());
             }
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
-
-
-//        // Instantiate (create) a Gson Parser
-//        Gson gsonParser = new Gson();
-//
-//        // Call the fromJson() method of the parser to create a new ISSPositionTime object
-//        // and populate it with the JSON String data.
-//        // The class field names must match the key names in the json string.
-//        IssPositionAtTime issPositionAtTime = null;
-//        try {
-//            issPositionAtTime = gsonParser.fromJson(jsonResponseString, IssPositionAtTime.class);
-//        } catch (JsonSyntaxException ex) {
-//            System.out.println("Jason syntax error encountered. " + ex);
-//        }
-//        System.out.println(issPositionAtTime);
     }
 }
 
